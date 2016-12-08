@@ -2,3 +2,6 @@
 .connstring
 .sql
 .obs
+.testdata
+env.go
+.env
