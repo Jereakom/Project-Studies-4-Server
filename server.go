@@ -77,6 +77,7 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func GetAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+  var counter int = 0
   type userResponse struct {
     Id int `json:"id"`
     Username string `json:"username"`
@@ -85,6 +86,7 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
   rows, err := db.Query("SELECT * FROM users")
 
+  fmt.Fprintf(w, "[")
   defer rows.Close()
     for rows.Next() {
 
@@ -106,8 +108,15 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
             if err != nil{
               log.Fatal(err)
             }
-            fmt.Fprintf(w, "%s\n", responseJSON)
+
+            if counter == 0{
+              fmt.Fprintf(w, "%s\n", responseJSON)
+              counter ++
+            } else{
+              fmt.Fprintf(w, ",%s\n", responseJSON)
+            }
     }
+    fmt.Fprintf(w, "]")
     if err := rows.Err(); err != nil {
             log.Fatal(err)
     }
@@ -216,7 +225,7 @@ func GetUser(w http.ResponseWriter, r *http.Request, params httprouter.Params)  
   err = db.QueryRow(get).Scan(&id, &username)
   if err != nil{
     log.Print(err)
-    fmt.Fprintf(w, "%s\n", err)
+    fmt.Fprintf(w, "%s,\n", err)
     return
   }
 
@@ -310,7 +319,7 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
   if err != nil{
     log.Fatal(err)
   }
-  fmt.Fprintf(w, "%s\n", responseJSON)// */
+  fmt.Fprintf(w, "%s,\n", responseJSON)// */
 
 }
 
@@ -368,10 +377,13 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
   if err != nil{
     log.Fatal(err)
   }
-  fmt.Fprintf(w, "%s\n", responseJSON) */
+  fmt.Fprintf(w, "%s,\n", responseJSON) */
 }
 
 func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+
+  var counter int = 0
+
 
   type postResponse struct {
     Id int `json:"id"`
@@ -385,6 +397,7 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Para
 
   rows, err := db.Query("SELECT * FROM posts WHERE username =")
 
+  fmt.Fprintf(w, "[")
   defer rows.Close()
     for rows.Next() {
 
@@ -412,8 +425,14 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Para
             if err != nil{
               log.Fatal(err)
             }
-            fmt.Fprintf(w, "%s\n", responseJSON)
-    }
+            if counter == 0{
+                fmt.Fprintf(w, "%s\n", responseJSON)
+                counter ++
+              } else{
+                fmt.Fprintf(w, ",%s\n", responseJSON)
+              }
+      }
+    fmt.Fprintf(w, "]")
     if err := rows.Err(); err != nil {
             log.Fatal(err)
     }
@@ -448,6 +467,10 @@ func GetUserChatMessages(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 }
 
 func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+
+  var counter int = 0
+  fmt.Fprintf(w, "[")
+
 
   type postResponse struct {
     Id int `json:"id"`
@@ -488,8 +511,14 @@ func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
             if err != nil{
               log.Fatal(err)
             }
-            fmt.Fprintf(w, "%s\n", responseJSON)
-    }
+            if counter == 0{
+              fmt.Fprintf(w, "%s\n", responseJSON)
+              counter ++
+              } else{
+                fmt.Fprintf(w, ",%s\n", responseJSON)
+              }
+            }
+    fmt.Fprintf(w, "]")
     if err := rows.Err(); err != nil {
             log.Fatal(err)
     }
