@@ -579,7 +579,7 @@ func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
 func CreateNewPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
-  r.ParseForm(
+  r.ParseForm()
 
   type postResponse struct {
     Id int `json:"id"`
