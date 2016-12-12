@@ -1,7 +1,8 @@
+.noup.*
 .template.json
 .connstring
 .sql
 .obs
 .testdata
-env.go
 .env
+Dockerfile

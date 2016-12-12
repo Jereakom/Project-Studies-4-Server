@@ -10,6 +10,7 @@ package main
   "github.com/julienschmidt/httprouter"
   "os"
   "strconv"
+  "github.com/jereakom/Project-Studies-4-Server/env"
 )
 
 var db *sql.DB
@@ -58,7 +59,7 @@ func main() {
 
   // ENV VARIABLES
 
-
+  envars.Setenvars()
 
   // END OF ENV VARIABLES
   var connstring string = "user="+os.Getenv("DBUSER")+" dbname="+os.Getenv("DB")+" host="+os.Getenv("DBHOST")+" password="+os.Getenv("DBPASS")+" sslmode=disable"
@@ -68,7 +69,7 @@ func main() {
     log.Fatal(err)
   }
 
-  log.Fatal(http.ListenAndServe(":8080", router))
+  log.Fatal(http.ListenAndServe(":8100", router))
 }
 
 
@@ -96,7 +97,7 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
             var email string
 
             if err := rows.Scan(&id, &username, &password, &email); err != nil {
-                    log.Fatal(err)
+                    log.Println(err)
             }
 
             response := userResponse{
@@ -106,7 +107,7 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
             responseJSON, _ := json.Marshal(response)
             if err != nil{
-              log.Fatal(err)
+              log.Println(err)
             }
 
             if counter == 0{
@@ -118,7 +119,7 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
     }
     fmt.Fprintf(w, "]")
     if err := rows.Err(); err != nil {
-            log.Fatal(err)
+            log.Println(err)
     }
 
 }
@@ -146,7 +147,7 @@ func Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
   err := db.QueryRow(insert).Scan(&id, &username, &email)
 
   if err != nil{
-    log.Fatal(err)
+    log.Println(err)
   }
 
   response := registerResponse{
@@ -156,7 +157,7 @@ func Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
   responseJSON, _ := json.Marshal(response)
   if err != nil{
-    log.Fatal(err)
+    log.Println(err)
   }
   fmt.Fprintf(w, "%s\n", responseJSON)
 
@@ -175,16 +176,24 @@ func Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
   fmt.Println("password:", r.Form["password"])
 
   var id int
-  var username string = r.Form["username"][0]
+  var username string
   var email string
-  var password string = r.Form["password"][0]
+  var password string
+
+  if len(r.Form["password"]) > 0 {
+    password = r.Form["password"][0]
+  }
+  if len(r.Form["username"]) > 0 {
+    username = r.Form["username"][0]
+  }
 
   var get string = "SELECT id, username, email FROM users WHERE username ='"+username+"' AND password='"+password+"'"
   fmt.Println(get)
   err := db.QueryRow(get).Scan(&id, &username, &email)
 
   if err != nil{
-    log.Fatal(err)
+      fmt.Fprintf(w, "%s\n", err)
+      return
   }
 
   response := loginResponse{
@@ -194,7 +203,7 @@ func Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
   responseJSON, _ := json.Marshal(response)
   if err != nil{
-    log.Fatal(err)
+    log.Println(err)
   }
   fmt.Fprintf(w, "%s\n", responseJSON)
 
@@ -214,7 +223,7 @@ func GetUser(w http.ResponseWriter, r *http.Request, params httprouter.Params)  
   var id  = params.ByName("id")
   var intID, err = strconv.Atoi(id)
   if err !=nil{
-    log.Fatal(err)
+    log.Println(err)
   }
   fmt.Println(id)
 
@@ -235,7 +244,7 @@ func GetUser(w http.ResponseWriter, r *http.Request, params httprouter.Params)  
 
   responseJSON, _ := json.Marshal(response)
   if err != nil{
-    log.Fatal(err)
+    log.Println(err)
   }
   fmt.Fprintf(w, "%s\n", responseJSON)// */
 }
@@ -307,7 +316,7 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 
   var userID, interr = strconv.Atoi(id)
   if interr !=nil{
-    log.Fatal(err)
+    log.Println(err)
   }
 
   response := editUser{
@@ -317,7 +326,7 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 
   responseJSON, _ := json.Marshal(response)
   if err != nil{
-    log.Fatal(err)
+    log.Println(err)
   }
   fmt.Fprintf(w, "%s,\n", responseJSON)// */
 
@@ -343,7 +352,7 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
 
   fmt.Println("username:", len(r.Form["username"]))
   fmt.Println("password:", len(r.Form["password"]))
-
+Post
 
   if len(r.Form["password"]) > 0 {
     password = r.Form["password"][0]
@@ -365,7 +374,7 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
 
   var removedID, remerr = strconv.Atoi(id)
   if remerr !=nil{
-    log.Fatal(err)
+    log.Println(err)
   }
 
   response := removeUser{
@@ -375,7 +384,7 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
 
   responseJSON, _ := json.Marshal(response)
   if err != nil{
-    log.Fatal(err)
+    log.Println(err)
   }
   fmt.Fprintf(w, "%s,\n", responseJSON) */
 }
@@ -384,6 +393,12 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Para
 
   var counter int = 0
 
+  var id string = params.ByName("id")
+/*
+  var intedID, err = strconv.Atoi(id)
+  if err != nil{
+    log.Println(err)
+  } */
 
   type postResponse struct {
     Id int `json:"id"`
@@ -395,7 +410,7 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Para
     Postedat string `json:"postedat"`
   }
 
-  rows, err := db.Query("SELECT * FROM posts WHERE username =")
+  rows, err := db.Query("SELECT posts.* FROM posts INNER JOIN users ON posts.username=users.username WHERE users.id = "+id+"")
 
   fmt.Fprintf(w, "[")
   defer rows.Close()
@@ -409,7 +424,7 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Para
             var longitude string
             var postedat string
             if err := rows.Scan(&id, &username, &caption, &picture, &latitude, &longitude, &postedat ); err != nil {
-                    log.Fatal(err)
+                    log.Println(err)
             }
 
             response := postResponse{
@@ -423,7 +438,7 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Para
 
             responseJSON, _ := json.Marshal(response)
             if err != nil{
-              log.Fatal(err)
+              log.Println(err)
             }
             if counter == 0{
                 fmt.Fprintf(w, "%s\n", responseJSON)
@@ -434,12 +449,49 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Para
       }
     fmt.Fprintf(w, "]")
     if err := rows.Err(); err != nil {
-            log.Fatal(err)
+            log.Println(err)
     }
 }
 
-func GetUserFriends(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+func GetUserFriends(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+  var counter int = 0
 
+  var id string = params.ByName("id")
+
+  type friends struct {
+    Username string `json:"username"`
+  }
+
+  rows, err := db.Query("SELECT friends.second_username FROM users INNER JOIN friends ON users.username=friends.first_username WHERE users.id = "+id+"")
+
+  fmt.Fprintf(w, "[")
+  defer rows.Close()
+    for rows.Next() {
+
+            var username string
+
+            if err := rows.Scan(&username); err != nil {
+                    log.Println(err)
+            }
+
+            response := friends{
+              Username: username}
+
+            responseJSON, _ := json.Marshal(response)
+            if err != nil{
+              log.Println(err)
+            }
+            if counter == 0{
+                fmt.Fprintf(w, "%s\n", responseJSON)
+                counter ++
+              } else{
+                fmt.Fprintf(w, ",%s\n", responseJSON)
+              }
+      }
+    fmt.Fprintf(w, "]")
+    if err := rows.Err(); err != nil {
+            log.Println(err)
+    }
 }
 
 func AddFriend(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
@@ -495,7 +547,7 @@ func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
             var longitude string
             var postedat string
             if err := rows.Scan(&id, &username, &caption, &picture, &latitude, &longitude, &postedat ); err != nil {
-                    log.Fatal(err)
+                    log.Println(err)
             }
 
             response := postResponse{
@@ -509,7 +561,7 @@ func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
             responseJSON, _ := json.Marshal(response)
             if err != nil{
-              log.Fatal(err)
+              log.Println(err)
             }
             if counter == 0{
               fmt.Fprintf(w, "%s\n", responseJSON)
@@ -520,12 +572,74 @@ func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
             }
     fmt.Fprintf(w, "]")
     if err := rows.Err(); err != nil {
-            log.Fatal(err)
+            log.Println(err)
     }
 
 }
 
 func CreateNewPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+
+  r.ParseForm(
+
+  type postResponse struct {
+    Id int `json:"id"`
+    Username string `json:"username"`
+    Caption string `json:"caption"`
+    Picture string `json:"picture"`
+    Latitude string `json:"latitude"`
+    Longitude string `json:"longitude"`
+    Postedat string `json:"postedat"`
+  }
+
+  var id int
+  var username string
+  var caption string
+  var picture string
+  var latitude string
+  var longitude string
+  var postedat string
+
+  if len(r.Form["username"]) > 0{
+    username = r.Form["username"][0]
+  }
+  if len(r.Form["caption"]) > 0{
+    caption = r.Form["caption"][0]
+  }
+  if len(r.Form["picture"]) > 0{
+    picture = r.Form["picture"][0]
+  }
+  if len(r.Form["latitude"]) > 0{
+    latitude = r.Form["latitude"][0]
+  }
+  if len(r.Form["longitude"]) > 0{
+    longitude = r.Form["longitude"][0]
+  }
+
+
+  var postQuery = "INSERT INTO posts (username, caption, picture, latitude, longitude) VALUES('"+username+"', '"+caption+"', '"+picture+"', '"+latitude+"', '"+longitude+"') RETURNING *"
+
+  err := db.QueryRow(postQuery).Scan(&id, &username, &caption, &picture, &latitude, &longitude, &postedat );
+
+  if err != nil {
+    fmt.Fprintf(w, "%s\n", "Could not post post")
+    return;
+  }
+
+  response := postResponse{
+    Id: id,
+    Username: username,
+    Caption: caption,
+    Picture: picture,
+    Latitude: latitude,
+    Longitude: longitude,
+    Postedat: postedat}
+
+  responseJSON, _ := json.Marshal(response)
+  if err != nil{
+    log.Println(err)
+  }
+
+  fmt.Fprintf(w, "%s\n", responseJSON)
 
 }
 
@@ -572,7 +686,6 @@ func RemoveGroupMember(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 func GetChatHistory(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
 }
-
 
 func AddNewMessage(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
