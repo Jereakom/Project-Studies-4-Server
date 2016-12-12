@@ -69,7 +69,7 @@ func main() {
     log.Fatal(err)
   }
 
-  log.Fatal(http.ListenAndServe(":8100", router))
+  log.Fatal(http.ListenAndServe(":80", router))
 }
 
 
@@ -394,11 +394,6 @@ func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Para
   var counter int = 0
 
   var id string = params.ByName("id")
-/*
-  var intedID, err = strconv.Atoi(id)
-  if err != nil{
-    log.Println(err)
-  } */
 
   type postResponse struct {
     Id int `json:"id"`
@@ -494,7 +489,42 @@ func GetUserFriends(w http.ResponseWriter, r *http.Request, params httprouter.Pa
     }
 }
 
-func AddFriend(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+func AddFriend(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+
+  type friends struct {
+    Username string `json:"username"`
+  }
+
+  r.ParseForm()
+
+  var first_username string
+  var second_username string
+
+  if len(r.Form["funame"]) > 0{
+    first_username = r.Form["funame"][0]
+  }
+  if len(r.Form["suname"]) > 0{
+    second_username = r.Form["suname"][0]
+  }
+
+
+  err := db.QueryRow("INSERT INTO friends VALUES('"+first_username+"', '"+second_username+"') RETURNING second_username").Scan(&second_username)
+
+  if err != nil {
+    log.Println(err)
+    fmt.Fprintf(w, "%s\n", "Failed to add a friend")
+    return
+  }
+
+  response := friends{
+    Username: second_username}
+
+  responseJSON, _ := json.Marshal(response)
+  if err != nil{
+    log.Println(err)
+  }
+
+  fmt.Fprintf(w, "%s\n", responseJSON)
 
 }
 
@@ -502,12 +532,79 @@ func RemoveFriend(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  
 
 }
 
-func GetUserGroups(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+func GetUserGroups(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+  var counter int = 0
 
+  var id string = params.ByName("id")
+
+  type groups struct {
+    Group string `json:"group"`
+  }
+
+  rows, err := db.Query("SELECT name FROM groups_users WHERE id = "+id+"")
+
+  fmt.Fprintf(w, "[")
+  defer rows.Close()
+    for rows.Next() {
+
+            var group string
+
+            if err := rows.Scan(&group); err != nil {
+                    log.Println(err)
+            }
+
+            response := groups{
+              Group: group}
+
+            responseJSON, _ := json.Marshal(response)
+            if err != nil{
+              log.Println(err)
+            }
+            if counter == 0{
+                fmt.Fprintf(w, "%s\n", responseJSON)
+                counter ++
+              } else{
+                fmt.Fprintf(w, ",%s\n", responseJSON)
+              }
+      }
+    fmt.Fprintf(w, "]")
+    if err := rows.Err(); err != nil {
+            log.Println(err)
+    }
 }
 
 func AddNewGroup(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
+  r.ParseForm()
+
+  var name string
+  var group string
+
+  type groups struct {
+    Group string `json:"group"`
+  }
+
+  if len(r.Form["name"]) > 0{
+    name = r.Form["name"][0]
+  }
+
+  err := db.QueryRow("INSERT INTO groups (name) VALUES ('"+name+"') RETURNING name").Scan(&group)
+
+
+
+    if err != nil {
+      log.Println(err)
+    }
+
+    response := groups{
+      Group: group}
+
+    responseJSON, _ := json.Marshal(response)
+    if err != nil{
+      log.Println(err)
+    }
+
+    fmt.Fprintf(w, "%s\n", responseJSON)
 }
 
 func LeaveGroup(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
@@ -682,6 +779,8 @@ func AddMember(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 func RemoveGroupMember(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
 }
+
+// REJECTED
 
 func GetChatHistory(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
