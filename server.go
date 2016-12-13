@@ -31,29 +31,19 @@ func main() {
   router.GET("/users/:id/posts", GetUserPosts)
   router.GET("/users/:id/friends", GetUserFriends)
   router.POST("/users/:id/friends", AddFriend)
-  router.DELETE("/users/:id/friends/:id", RemoveFriend)
+  router.DELETE("/users/:id/friends/:username", RemoveFriend)
   router.GET("/users/:id/groups", GetUserGroups)
   router.POST("/users/:id/groups", AddNewGroup)
+  router.POST("/users/:id/groups/", JoinGroup)
   router.DELETE("/users/:id/groups/:id/", LeaveGroup)
-  router.GET("/users/:id/chat", GetUserChatMessages)
 
   router.GET("/posts", GetAllPosts)
   router.POST("/posts", CreateNewPost)
   router.DELETE("/posts/:id", RemovePost)
-  router.GET("/posts/:id", GetPost)
-  router.PUT("/posts/:id", EditPost)
 
-  router.GET("/groups", ListAllGroups)
   router.POST("/groups", CreateGroup)
-  router.GET("/groups/:id", GetGroup)
   router.DELETE("/groups/:id", DeleteGroup)
   router.GET("/groups/:id/members", GetGroupMembers)
-  router.POST("/groups/:id/members", AddMember)
-  router.DELETE("/groups/:id/members/:id", RemoveGroupMember)
-
-  router.GET("/chat/", GetChatHistory)
-  router.POST("/chat", AddNewMessage)
-  router.DELETE("/chat/:id", RemoveMessage)
 
   router.GET("/", Index)
 
@@ -303,8 +293,6 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
   }
 
   updateInfo += "WHERE username ='"+username+"' AND password='"+password+"' RETURNING id, username, email"
-//  newpassword := r.Form["newpassword"][0]
-//  newemail := r.Form["newemail"][0]
 
   fmt.Println(updateInfo)
   err = db.QueryRow(updateInfo).Scan(&id, &username, &email)
@@ -334,7 +322,8 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 
 func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
 
-  /* TODO: STUDY SENSIBLE IMPLEMENTATION
+  // log.Println(r.Header)
+  log.Println(r.Header["Authorization"][0])
 
   var id  = params.ByName("id")
 
@@ -343,42 +332,30 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
   var email string
 
   type removeUser struct {
-    Id int `json:"id"`
+    Id string `json:"id"`
     Username string `json:"username"`
     Email string `json:"email"`
   }
 
-  r.ParseForm()
-
-  fmt.Println("username:", len(r.Form["username"]))
-  fmt.Println("password:", len(r.Form["password"]))
-Post
-
-  if len(r.Form["password"]) > 0 {
-    password = r.Form["password"][0]
+  if len(r.Header["Authorization"]) > 0 {
+    password = r.Header["Authorization"][0]
+  } else {
+    log.Println("No password detected")
+    return
   }
 
-  if len(r.Form["username"]) > 0 {
-    username = r.Form["username"][0]
-  }
-
-  var deleteUser string = "DELETE FROM users WHERE username ='"+username+"' AND password='"+password+"' RETURNING id, username, email "
+  var deleteUser string = "DELETE FROM users WHERE id ='"+id+"' AND password='"+password+"' RETURNING id, username, email "
   fmt.Println(deleteUser)
   err := db.QueryRow(deleteUser).Scan(&id, &username, &email)
 
   if err != nil{
     log.Print(err)
-    fmt.Fprintf(w, "Invalid password\n")
+    fmt.Fprintf(w, "Invalid password or username\n")
     return
   }
 
-  var removedID, remerr = strconv.Atoi(id)
-  if remerr !=nil{
-    log.Println(err)
-  }
-
   response := removeUser{
-      Id: removedID,
+    Id: id,
     Username: username,
     Email: email}
 
@@ -386,7 +363,7 @@ Post
   if err != nil{
     log.Println(err)
   }
-  fmt.Fprintf(w, "%s,\n", responseJSON) */
+  fmt.Fprintf(w, "%s,\n", responseJSON)
 }
 
 func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
@@ -528,8 +505,47 @@ func AddFriend(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 
 }
 
-func RemoveFriend(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+func RemoveFriend(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+  type friend struct {
+    Username string `json:"username"`
+  }
 
+  r.ParseForm()
+
+  var friendToDelete string = params.ByName("username")
+  var thisAccount string
+
+  var id = params.ByName("id")
+
+  var queryString = "SELECT username from users where id='"+id+"'"
+
+  err := db.QueryRow(queryString).Scan(&thisAccount)
+
+  log.Println(thisAccount)
+
+  if err != nil {
+    log.Println(err)
+    fmt.Fprintf(w, "%s\n", "Could not find user to remove friend")
+    return
+  }
+
+  err = db.QueryRow("DELETE FROM friends WHERE first_username='"+thisAccount+"' AND second_username='"+friendToDelete+"' RETURNING second_username").Scan(&friendToDelete)
+
+  if err != nil {
+    log.Println(err)
+    fmt.Fprintf(w, "%s\n", "Could not remove friend")
+    return
+  }
+
+  response := friend{
+    Username: friendToDelete}
+
+  responseJSON, _ := json.Marshal(response)
+  if err != nil{
+    log.Println(err)
+  }
+
+  fmt.Fprintf(w, "%s\n", responseJSON)
 }
 
 func GetUserGroups(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
@@ -607,13 +623,42 @@ func AddNewGroup(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
     fmt.Fprintf(w, "%s\n", responseJSON)
 }
 
+func JoinGroup(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+
+  var id string = params.ByName("id")
+  var name string
+
+  type joinResponse struct {
+    Group string `json:"group"`
+  }
+
+  if len(r.Form["name"]) > 0{
+    name = r.Form["name"][0]
+  } else {
+    log.Println("cannot join group")
+    return
+  }
+
+  err := db.QueryRow("INSERT INTO groups_users (id, name) VALUES ('"+id+"','"+name+"') RETURNING name").Scan(&name)
+  if err != nil {
+    log.Println(err)
+  }
+
+    response := joinResponse{
+      Group: name}
+
+    responseJSON, _ := json.Marshal(response)
+    if err != nil{
+      log.Println(err)
+    }
+
+    fmt.Fprintf(w, "%s\n", responseJSON)
+}
+
 func LeaveGroup(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
 }
 
-func GetUserChatMessages(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
-
-}
 
 func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
@@ -744,24 +789,37 @@ func RemovePost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
 }
 
-func GetPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
-
-}
-
-func EditPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
-
-}
-
-func ListAllGroups(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
-
-}
-
 func CreateGroup(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+  r.ParseForm()
 
-}
+  type groupResponse struct {
+    Group string `json:"group"`
+  }
 
-func GetGroup(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+  var name string
 
+  if len(r.Form["name"]) > 0{
+    name = r.Form["name"][0]
+  }
+
+  var postQuery = "INSERT INTO groups (name) VALUES('"+name+"') RETURNING name"
+
+  err := db.QueryRow(postQuery).Scan(&name);
+
+  if err != nil {
+    fmt.Fprintf(w, "%s\n", "Could not create group")
+    return;
+  }
+
+  response := groupResponse{
+    Group: name}
+
+  responseJSON, _ := json.Marshal(response)
+  if err != nil{
+    log.Println(err)
+  }
+
+  fmt.Fprintf(w, "%s\n", responseJSON)
 }
 
 func DeleteGroup(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
@@ -769,27 +827,46 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 }
 
 func GetGroupMembers(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+  var counter int = 0
+  fmt.Fprintf(w, "[")
 
-}
+  r.ParseForm()
 
-func AddMember(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+  type users struct {
+    Group string `json:"group"`
+    Username string `json:"username"`
+  }
 
-}
+  var username string
+  var groupname string
 
-func RemoveGroupMember(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+  if len(r.Form["groupname"]) > 0{
+    groupname = r.Form["groupname"][0]
+  }
 
-}
+  var groupMemberQuery = "SELECT groups_users.name, users.username from groups_users INNER JOIN on groups_users.id=users.id WHERE name='"+groupname+"'"
 
-// REJECTED
+  err := db.QueryRow(groupMemberQuery).Scan(&username, &groupname);
 
-func GetChatHistory(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+  if err != nil {
+    fmt.Fprintf(w, "%s\n", "Could not get group")
+    return;
+  }
 
-}
+  response := users{
+    Username: username,
+    Group: groupname}
 
-func AddNewMessage(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+  responseJSON, _ := json.Marshal(response)
+  if err != nil{
+    log.Println(err)
+  }
 
-}
-
-func RemoveMessage(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
-
+  if counter == 0{
+    fmt.Fprintf(w, "%s\n", responseJSON)
+    counter ++
+    } else{
+      fmt.Fprintf(w, ",%s\n", responseJSON)
+    }
+    fmt.Fprintf(w, "]")
 }
