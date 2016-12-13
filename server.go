@@ -34,7 +34,7 @@ func main() {
   router.DELETE("/users/:id/friends/:username", RemoveFriend)
   router.GET("/users/:id/groups", GetUserGroups)
   router.POST("/users/:id/groups", AddNewGroup)
-  router.POST("/users/:id/groups/", JoinGroup)
+  router.POST("/users/:id/groups/:name", JoinGroup)
   router.DELETE("/users/:id/groups/:id/", LeaveGroup)
 
   router.GET("/posts", GetAllPosts)
@@ -253,10 +253,6 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
     Email string `json:"email"`
   }
 
-  fmt.Println("username:", len(r.Form["username"]))
-  fmt.Println("password:", len(r.Form["password"]))
-
-
   if len(r.Form["password"]) > 0 {
     password = r.Form["password"][0]
   }
@@ -311,7 +307,7 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
   if err != nil{
     log.Println(err)
   }
-  fmt.Fprintf(w, "%s,\n", responseJSON)// */
+  fmt.Fprintf(w, "%s\n", responseJSON)// */
 
 }
 
