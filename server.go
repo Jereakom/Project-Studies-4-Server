@@ -40,6 +40,7 @@ func main() {
   router.GET("/posts", GetAllPosts)
   router.POST("/posts", CreateNewPost)
 
+  router.GET("/groups", GetAllGroups)
   router.DELETE("/groups/:name", DeleteGroup)
   router.GET("/groups/:id/members", GetGroupMembers)
 
@@ -58,7 +59,7 @@ func main() {
     log.Fatal(err)
   }
 
-  log.Fatal(http.ListenAndServe(":80", router))
+  log.Fatal(http.ListenAndServe(":8100", router))
 }
 
 
@@ -812,6 +813,51 @@ func CreateNewPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
   fmt.Fprintf(w, "%s\n", responseJSON)
 
 }
+
+func GetAllGroups(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+
+  var counter int = 0
+  type groupslist struct {
+    Id int `json:"id"`
+    Name string `json:"name"`
+  }
+
+  rows, err := db.Query("SELECT * FROM groups")
+
+  fmt.Fprintf(w, "[")
+  defer rows.Close()
+    for rows.Next() {
+
+            var id int
+            var name string
+
+            if err := rows.Scan(&id, &name); err != nil {
+                    log.Println(err)
+            }
+
+            response := groupslist{
+              Id: id,
+              Name: name}
+
+            responseJSON, _ := json.Marshal(response)
+            if err != nil{
+              log.Println(err)
+            }
+
+            if counter == 0{
+              fmt.Fprintf(w, "%s\n", responseJSON)
+              counter ++
+            } else{
+              fmt.Fprintf(w, ",%s\n", responseJSON)
+            }
+    }
+    fmt.Fprintf(w, "]")
+    if err := rows.Err(); err != nil {
+            log.Println(err)
+    }
+
+}
+
 
 func DeleteGroup(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
 
