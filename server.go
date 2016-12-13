@@ -623,17 +623,10 @@ func AddNewGroup(w http.ResponseWriter, r *http.Request, params httprouter.Param
 func JoinGroup(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
 
   var id string = params.ByName("id")
-  var name string
+  var name string = params.ByName("name")
 
   type joinResponse struct {
     Group string `json:"group"`
-  }
-
-  if len(r.Form["name"]) > 0{
-    name = r.Form["name"][0]
-  } else {
-    log.Println("cannot join group")
-    return
   }
 
   err := db.QueryRow("INSERT INTO groups_users (id, name) VALUES ('"+id+"','"+name+"') RETURNING name").Scan(&name)
