@@ -59,7 +59,7 @@ func main() {
     log.Fatal(err)
   }
 
-  log.Fatal(http.ListenAndServe(":80", router))
+  log.Fatal(http.ListenAndServe(":8100", router))
 }
 
 
@@ -877,48 +877,67 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request, params httprouter.Param
     fmt.Fprintf(w, "%s\n", responseJSON)
 }
 
-func GetGroupMembers(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
+func GetGroupMembers(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
 
   var counter int = 0
-  fmt.Fprintf(w, "[")
-
-  r.ParseForm()
-
-  type users struct {
-    Group string `json:"group"`
-    Username string `json:"username"`
+  type groupmembers struct {
+    Groupname string `json:"groupname"`
+    Name string `json:"name"`
+    Id int `json:"id"`
   }
 
-  var username string
-  var groupname string
+  var id = params.ByName("id")
 
-  if len(r.Form["groupname"]) > 0{
-    groupname = r.Form["groupname"][0]
-  }
+  var name string
 
-  var groupMemberQuery = "SELECT groups_users.name, users.username from groups_users INNER JOIN on groups_users.id=users.id WHERE name='"+groupname+"'"
-
-  err := db.QueryRow(groupMemberQuery).Scan(&username, &groupname);
+  err := db.QueryRow("SELECT name FROM groups where id='"+id+"'").Scan(&name)
 
   if err != nil {
-    fmt.Fprintf(w, "%s\n", "Could not get group")
-    return;
-  }
-
-  response := users{
-    Username: username,
-    Group: groupname}
-
-  responseJSON, _ := json.Marshal(response)
-  if err != nil{
     log.Println(err)
+    fmt.Fprintf(w, "failed to list group members")
+    return
   }
 
-  if counter == 0{
-    fmt.Fprintf(w, "%s\n", responseJSON)
-    counter ++
-    } else{
-      fmt.Fprintf(w, ",%s\n", responseJSON)
+
+  rows, err := db.Query("SELECT groups_users.name, users.username, users.id FROM groups_users INNER JOIN users ON groups_users.id=users.id where groups_users.name='"+name+"'")
+
+  fmt.Fprintf(w, "[")
+  defer rows.Close()
+    for rows.Next() {
+
+            var userid int
+            var groupname string
+
+            if err := rows.Scan(&groupname, &name, &id); err != nil {
+                    log.Println(err)
+            }
+
+            userid, err = strconv.Atoi(id)
+            if err != nil {
+              log.Println(err)
+              return
+            }
+
+            response := groupmembers{
+              Groupname: groupname,
+              Name: name,
+              Id: userid}
+
+            responseJSON, _ := json.Marshal(response)
+            if err != nil{
+              log.Println(err)
+            }
+
+            if counter == 0{
+              fmt.Fprintf(w, "%s\n", responseJSON)
+              counter ++
+            } else{
+              fmt.Fprintf(w, ",%s\n", responseJSON)
+            }
     }
     fmt.Fprintf(w, "]")
+    if err := rows.Err(); err != nil {
+            log.Println(err)
+    }
+
 }
