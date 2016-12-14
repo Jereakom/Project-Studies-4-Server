@@ -35,6 +35,7 @@ func main() {
   router.DELETE("/users/:id/friends/:username", RemoveFriend)
   router.GET("/users/:id/groups", GetUserGroups)
   router.POST("/users/:id/groups", AddNewGroup)
+  router.POST("/parsertest", Parsertest)
   router.POST("/users/:id/groups/:name", JoinGroup)
   router.DELETE("/users/:id/groups/:id/", LeaveGroup)
 
@@ -60,7 +61,7 @@ func main() {
     log.Fatal(err)
   }
 
-  log.Fatal(http.ListenAndServe(":8100", router))
+  log.Fatal(http.ListenAndServe(":80", router))
 }
 
 
@@ -361,7 +362,7 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
   if err != nil{
     log.Println(err)
   }
-  fmt.Fprintf(w, "%s,\n", responseJSON)
+  fmt.Fprintf(w, "%s\n", responseJSON)
 }
 
 func GetUserPosts(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
@@ -744,9 +745,54 @@ func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
 }
 
-func parseForTags(string textToParse) string {
+func Parsertest (w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
+  r.ParseForm()
 
+  log.Println(r.Form["caption"])
+  if len(r.Form["caption"]) > 0 {
+    parseForTags(r.Form["caption"][0], 3)
+
+  }
+}
+
+func parseForTags(textToParse string, postID int) {
+
+  var id = strconv.Itoa(postID)
+
+  re := regexp.MustCompile("@(\\w+)")
+  var usernameMentions = re.FindAllStringSubmatch(textToParse, -1)
+
+  re = regexp.MustCompile("#(\\w+)")
+  var groupMentions = re.FindAllStringSubmatch(textToParse, -1)
+  log.Println(usernameMentions)
+  log.Println(groupMentions)
+  var unamelen = len(usernameMentions)
+  var glen = len(groupMentions)
+//  var usernames = make([]string, unamelen)
+//  var groups = make([]string, glen)
+
+  for i := 0; i < unamelen; i++ {
+
+    var postQuery = "INSERT INTO username_mentions (post_id, username_mention) VALUES('"+id+"', '"+usernameMentions[i][1]+"')"
+
+    err := db.QueryRow(postQuery)
+
+    if err != nil {
+      log.Println("Could not add username mention")
+    }
+  }
+
+  for i := 0; i < glen; i++ {
+
+    var postQuery = "INSERT INTO tags (post_id, tagword) VALUES('"+id+"', '"+groupMentions[i][1]+"')"
+
+    err := db.QueryRow(postQuery)
+
+    if err != nil {
+      log.Println("Could not add group tag")
+    }
+  }
 
 }
 
@@ -788,15 +834,15 @@ func CreateNewPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
     longitude = r.Form["longitude"][0]
   }
 
-
   var postQuery = "INSERT INTO posts (username, caption, picture, latitude, longitude) VALUES('"+username+"', '"+caption+"', '"+picture+"', '"+latitude+"', '"+longitude+"') RETURNING *"
 
   err := db.QueryRow(postQuery).Scan(&id, &username, &caption, &picture, &latitude, &longitude, &postedat );
 
   if err != nil {
     fmt.Fprintf(w, "%s\n", "Could not post post")
-    return;
+    return
   }
+  parseForTags(caption, id)
 
   response := postResponse{
     Id: id,
