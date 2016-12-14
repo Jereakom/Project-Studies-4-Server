@@ -11,6 +11,7 @@ package main
   "os"
   "strconv"
   "github.com/jereakom/Project-Studies-4-Server/env"
+  "regexp"
 )
 
 var db *sql.DB
@@ -59,7 +60,7 @@ func main() {
     log.Fatal(err)
   }
 
-  log.Fatal(http.ListenAndServe(":80", router))
+  log.Fatal(http.ListenAndServe(":8100", router))
 }
 
 
@@ -128,6 +129,12 @@ func Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
 
   if len(r.Form["username"]) > 0 {
     username = r.Form["username"][0]
+  }
+  if len(r.Form["email"]) > 0 {
+    email = r.Form["email"][0]
+  }
+  if len(r.Form["password"]) > 0 {
+    password = r.Form["password"][0]
   }
 
   var insert string = "INSERT INTO users (username, password, email) VALUES ('"+username+"', '"+password+"', '"+email+"') RETURNING id, username, email"
@@ -734,6 +741,12 @@ func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
     if err := rows.Err(); err != nil {
             log.Println(err)
     }
+
+}
+
+func parseForTags(string textToParse) string {
+
+
 
 }
 
