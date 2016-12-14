@@ -41,7 +41,7 @@ func main() {
 
   router.GET("/posts", GetAllPosts)
   router.GET("/posts/tags/:tag", GetTaggedPosts)
-  router.GET("/posts/:username", GetUsernameMentionedPosts)
+  router.GET("/posts/users/:username", GetUsernameMentionedPosts)
   router.POST("/posts", CreateNewPost)
 
   router.GET("/groups", GetAllGroups)
