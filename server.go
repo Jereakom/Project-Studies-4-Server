@@ -40,6 +40,8 @@ func main() {
   router.DELETE("/users/:id/groups/:id/", LeaveGroup)
 
   router.GET("/posts", GetAllPosts)
+  router.GET("/posts/:tag", GetTaggedPosts)
+  router.GET("/posts/:username", GetUsernameMentionedPosts)
   router.POST("/posts", CreateNewPost)
 
   router.GET("/groups", GetAllGroups)
@@ -743,6 +745,124 @@ func GetAllPosts(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
             log.Println(err)
     }
 
+}
+
+func GetTaggedPosts(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+  var counter int = 0
+  fmt.Fprintf(w, "[")
+
+  var tag = params.ByName("tag")
+
+
+  type postResponse struct {
+    Id int `json:"id"`
+    Username string `json:"username"`
+    Caption string `json:"caption"`
+    Picture string `json:"picture"`
+    Latitude string `json:"latitude"`
+    Longitude string `json:"longitude"`
+    Postedat string `json:"postedat"`
+  }
+
+  rows, err := db.Query("SELECT id, username, caption, picture, latitude, longitude, postedat FROM posts INNER JOIN tags ON posts.id=tags.post_id WHERE tags.tagword='"+tag+"'")
+
+  defer rows.Close()
+    for rows.Next() {
+
+            var id int
+            var username string
+            var caption string
+            var picture string
+            var latitude string
+            var longitude string
+            var postedat string
+            if err := rows.Scan(&id, &username, &caption, &picture, &latitude, &longitude, &postedat ); err != nil {
+                    log.Println(err)
+            }
+
+            response := postResponse{
+              Id: id,
+              Username: username,
+              Caption: caption,
+              Picture: picture,
+              Latitude: latitude,
+              Longitude: longitude,
+              Postedat: postedat}
+
+            responseJSON, _ := json.Marshal(response)
+            if err != nil{
+              log.Println(err)
+            }
+            if counter == 0{
+              fmt.Fprintf(w, "%s\n", responseJSON)
+              counter ++
+              } else{
+                fmt.Fprintf(w, ",%s\n", responseJSON)
+              }
+            }
+    fmt.Fprintf(w, "]")
+    if err := rows.Err(); err != nil {
+            log.Println(err)
+    }
+}
+
+func GetUsernameMentionedPosts(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
+  var counter int = 0
+  fmt.Fprintf(w, "[")
+
+  var username_mention = params.ByName("username")
+
+
+  type postResponse struct {
+    Id int `json:"id"`
+    Username string `json:"username"`
+    Caption string `json:"caption"`
+    Picture string `json:"picture"`
+    Latitude string `json:"latitude"`
+    Longitude string `json:"longitude"`
+    Postedat string `json:"postedat"`
+  }
+
+  rows, err := db.Query("SELECT id, username, caption, picture, latitude, longitude, postedat FROM posts INNER JOIN username_mentions ON posts.id=username_mentions.post_id WHERE username_mentions.username_mention='"+username_mention+"'")
+
+  defer rows.Close()
+    for rows.Next() {
+
+            var id int
+            var username string
+            var caption string
+            var picture string
+            var latitude string
+            var longitude string
+            var postedat string
+            if err := rows.Scan(&id, &username, &caption, &picture, &latitude, &longitude, &postedat ); err != nil {
+                    log.Println(err)
+            }
+
+            response := postResponse{
+              Id: id,
+              Username: username,
+              Caption: caption,
+              Picture: picture,
+              Latitude: latitude,
+              Longitude: longitude,
+              Postedat: postedat}
+
+            responseJSON, _ := json.Marshal(response)
+            if err != nil{
+              log.Println(err)
+            }
+            if counter == 0{
+              fmt.Fprintf(w, "%s\n", responseJSON)
+              counter ++
+              } else{
+                fmt.Fprintf(w, ",%s\n", responseJSON)
+              }
+            }
+    fmt.Fprintf(w, "]")
+    if err := rows.Err(); err != nil {
+            log.Println(err)
+    }
 }
 
 func Parsertest (w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
