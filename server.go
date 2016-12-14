@@ -40,7 +40,7 @@ func main() {
   router.DELETE("/users/:id/groups/:id/", LeaveGroup)
 
   router.GET("/posts", GetAllPosts)
-  router.GET("/posts/:tag", GetTaggedPosts)
+  router.GET("/posts/tags/:tag", GetTaggedPosts)
   router.GET("/posts/:username", GetUsernameMentionedPosts)
   router.POST("/posts", CreateNewPost)
 
