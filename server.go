@@ -59,7 +59,7 @@ func main() {
     log.Fatal(err)
   }
 
-  log.Fatal(http.ListenAndServe(":8100", router))
+  log.Fatal(http.ListenAndServe(":80", router))
 }
 
 
