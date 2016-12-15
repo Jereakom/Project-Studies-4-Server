@@ -37,7 +37,7 @@ func main() {
   router.POST("/users/:id/groups", AddNewGroup)
   router.POST("/parsertest", Parsertest)
   router.POST("/users/:id/groups/:name", JoinGroup)
-  router.DELETE("/users/:id/groups/:name/", LeaveGroup)
+  router.DELETE("/users/:id/groups/:name", LeaveGroup)
 
   router.GET("/posts", GetAllPosts)
   router.GET("/posts/tags/:tag", GetTaggedPosts)
@@ -667,7 +667,8 @@ func LeaveGroup(w http.ResponseWriter, r *http.Request, params httprouter.Params
 
   err := db.QueryRow("DELETE FROM groups_users WHERE id='"+id+"' AND name='"+name+"' RETURNING *").Scan(&id, &name)
   if err != nil {
-    log.Println(err)
+    fmt.Fprintf(w, "{\"response\":\"%s\"}", err)
+    return
   }
 
     response := joinResponse{
