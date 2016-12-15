@@ -37,7 +37,7 @@ func main() {
   router.POST("/users/:id/groups", AddNewGroup)
   router.POST("/parsertest", Parsertest)
   router.POST("/users/:id/groups/:name", JoinGroup)
-  router.DELETE("/users/:id/groups/:id/", LeaveGroup)
+  router.DELETE("/users/:id/groups/:name/", LeaveGroup)
 
   router.GET("/posts", GetAllPosts)
   router.GET("/posts/tags/:tag", GetTaggedPosts)
@@ -659,17 +659,10 @@ func JoinGroup(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 func LeaveGroup(w http.ResponseWriter, r *http.Request, params httprouter.Params)  {
 
   var id string = params.ByName("id")
-  var name string
+  var name string = params.ByName("name")
 
   type joinResponse struct {
     Group string `json:"group"`
-  }
-
-  if len(r.Form["name"]) > 0{
-    name = r.Form["name"][0]
-  } else {
-    log.Println("cannot leave group")
-    return
   }
 
   err := db.QueryRow("DELETE FROM groups_users WHERE id='"+id+"' AND name='"+name+"' RETURNING *").Scan(&id, &name)
