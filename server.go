@@ -190,7 +190,7 @@ func Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params)  {
   err := db.QueryRow(get).Scan(&id, &username, &email)
 
   if err != nil{
-      fmt.Fprintf(w, "%s\n", err)
+      fmt.Fprintf(w, "\"response\":\"%s\"", err)
       return
   }
 
@@ -232,7 +232,7 @@ func GetUser(w http.ResponseWriter, r *http.Request, params httprouter.Params)  
   err = db.QueryRow(get).Scan(&id, &username)
   if err != nil{
     log.Print(err)
-    fmt.Fprintf(w, "%s,\n", err)
+    fmt.Fprintf(w, "\"response\":\"%s\"", err)
     return
   }
 
@@ -299,7 +299,7 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
   err = db.QueryRow(updateInfo).Scan(&id, &username, &email)
   if err != nil{
     log.Print(err)
-    fmt.Fprintf(w, "%s\n", err)
+    fmt.Fprintf(w, "\"response\":\"%s\"", err)
     return
   }
 
