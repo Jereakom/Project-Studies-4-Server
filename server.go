@@ -342,6 +342,7 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
     password = r.Header["Authorization"][0]
   } else {
     log.Println("No password detected")
+    fmt.Fprintf(w, "{\"response\":\"Invalid password\"}")
     return
   }
 
