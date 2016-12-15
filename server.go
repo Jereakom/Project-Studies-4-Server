@@ -352,7 +352,7 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
 
   if err != nil{
     log.Print(err)
-    fmt.Fprintf(w, "{\"response\":\"Invalid password or username\"}")
+    fmt.Fprintf(w, "{\"response\":\"Invalid password\"}")
     return
   }
 
