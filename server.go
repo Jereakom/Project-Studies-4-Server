@@ -289,6 +289,10 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
     updateInfo += "password='"+r.Form["newpassword"][0]+"' "
   }
 
+  if len(r.Form["newpassword"]) > 0 && len(r.Form["newemail"]) > 0 {
+    updateInfo += ", "
+  }
+
   if len(r.Form["newemail"]) > 0 {
     updateInfo += "email='"+r.Form["newemail"][0]+"' "
   }
