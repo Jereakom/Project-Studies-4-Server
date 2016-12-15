@@ -277,7 +277,7 @@ func EditUser(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 
   if err != nil{
     log.Print(err)
-    fmt.Fprintf(w, "Invalid password\n")
+    fmt.Fprintf(w, "{\"response\":\"Invalid password\"}")
     return
   }
 
@@ -351,7 +351,7 @@ func RemoveUser(w http.ResponseWriter, r *http.Request, params httprouter.Params
 
   if err != nil{
     log.Print(err)
-    fmt.Fprintf(w, "Invalid password or username\n")
+    fmt.Fprintf(w, "{\"response\":\"Invalid password or username\"}")
     return
   }
 
@@ -490,7 +490,7 @@ func AddFriend(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 
   if err != nil {
     log.Println(err)
-    fmt.Fprintf(w, "%s\n", "Failed to add a friend")
+    fmt.Fprintf(w, "{\"response\":\"%s\"}", "Failed to add a friend")
     return
   }
 
@@ -527,7 +527,7 @@ func RemoveFriend(w http.ResponseWriter, r *http.Request, params httprouter.Para
 
   if err != nil {
     log.Println(err)
-    fmt.Fprintf(w, "%s\n", "Could not find user to remove friend")
+    fmt.Fprintf(w, "{\"response\":\"%s\"}", "Could not find user to remove friend")
     return
   }
 
@@ -535,7 +535,7 @@ func RemoveFriend(w http.ResponseWriter, r *http.Request, params httprouter.Para
 
   if err != nil {
     log.Println(err)
-    fmt.Fprintf(w, "%s\n", "Could not remove friend")
+    fmt.Fprintf(w, "{\"response\":\"%s\"}", "Could not remove friend")
     return
   }
 
@@ -959,7 +959,7 @@ func CreateNewPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
   err := db.QueryRow(postQuery).Scan(&id, &username, &caption, &picture, &latitude, &longitude, &postedat );
 
   if err != nil {
-    fmt.Fprintf(w, "%s\n", "Could not post post")
+    fmt.Fprintf(w, "{\"response\":\"%s\"}", "Could not post post")
     return
   }
   parseForTags(caption, id)
@@ -1073,7 +1073,7 @@ func GetGroupMembers(w http.ResponseWriter, r *http.Request, params httprouter.P
 
   if err != nil {
     log.Println(err)
-    fmt.Fprintf(w, "failed to list group members")
+    fmt.Fprintf(w, "{\"response\":\"failed to list group members\"}")
     return
   }
 
