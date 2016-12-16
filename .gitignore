@@ -1,0 +1,10 @@
+.noup.*
+.template.json
+.connstring
+.sql
+.obs
+.testdata
+.env
+Dockerfile
+env
+upload
